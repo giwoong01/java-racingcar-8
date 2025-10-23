@@ -11,7 +11,7 @@ public class Cars {
     private static final int DEFAULT_POSITION = 0;
     private static final String LINE_SEPARATOR = "\n";
     private static final String INPUT_DELIMITER = ",";
-    private static final String WINNER_NAME_DELIMITER = ",";
+    private static final String WINNER_NAME_DELIMITER = ", ";
     private static final String ERROR_MESSAGE_DUPLICATE_NAME = "자동차의 이름은 중복될 수 없습니다.";
 
     private final List<Car> cars;
