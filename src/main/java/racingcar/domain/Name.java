@@ -1,7 +1,5 @@
 package racingcar.domain;
 
-import org.junit.platform.commons.util.StringUtils;
-
 public record Name(
         String name
 ) {
@@ -16,7 +14,7 @@ public record Name(
     }
 
     private void validateNameBlank(String name) {
-        if (StringUtils.isBlank(name)) {
+        if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException(ERROR_MESSAGE_NAME_BLANK);
         }
     }

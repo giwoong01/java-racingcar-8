@@ -1,9 +1,10 @@
 package racingcar.domain;
 
 import java.util.Arrays;
-import java.util.IllformedLocaleException;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
+import racingcar.domain.power.PowerGenerator;
 
 public class Cars {
 
@@ -30,8 +31,21 @@ public class Cars {
 
     private void validateDuplicateNames(List<Name> names) {
         if (names.size() != Set.copyOf(names).size()) {
-            throw new IllformedLocaleException(ERROR_MESSAGE_DUPLICATE_NAME);
+            throw new IllegalArgumentException(ERROR_MESSAGE_DUPLICATE_NAME);
         }
+    }
+
+    public void moveAll(PowerGenerator powerGenerator) {
+        for (Car car : cars) {
+            car.move(powerGenerator.generate());
+        }
+    }
+
+    @Override
+    public String toString() {
+        return cars.stream()
+                .map(Car::toString)
+                .collect(Collectors.joining("\n"));
     }
 
 }
