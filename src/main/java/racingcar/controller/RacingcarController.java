@@ -19,7 +19,7 @@ public class RacingcarController {
         TryCount tryCount = getTryCount();
 
         runRace(cars, tryCount);
-
+        displayWinners(cars);
     }
 
     private Cars getCars() {
@@ -40,5 +40,9 @@ public class RacingcarController {
             OutputView.printRoundStatus(cars.toString());
         }
     }
-    
+
+    private void displayWinners(Cars cars) {
+        OutputView.printWinnerNames(cars.winnerNames());
+    }
+
 }

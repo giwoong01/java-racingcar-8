@@ -2,8 +2,10 @@ package racingcar.domain;
 
 public class Car {
 
-    private static final int ZERO = 0;
+    private static final int INITIAL_POSITION = 0;
     private static final int MOVE_THRESHOLD = 4;
+    private static final String NAME_POSITION_SEPARATOR = " : ";
+    private static final String POSITION_MARK = "-";
 
     private final Name name;
     private final Position position;
@@ -27,9 +29,17 @@ public class Car {
         return power >= MOVE_THRESHOLD;
     }
 
+    public Name getName() {
+        return name;
+    }
+
+    public Position getPosition() {
+        return position;
+    }
+
     @Override
     public String toString() {
-        return name.name() + " : " + "-".repeat(Math.max(ZERO, position.getPosition()));
+        return name.name() + NAME_POSITION_SEPARATOR + POSITION_MARK.repeat(Math.max(INITIAL_POSITION, position.getValue()));
     }
 
 }
