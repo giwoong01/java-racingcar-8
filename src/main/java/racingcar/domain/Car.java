@@ -15,10 +15,6 @@ public class Car {
         this.position = new Position();
     }
 
-    public static Car from(Name name) {
-        return new Car(name);
-    }
-
     public void move(int power) {
         if (isMove(power)) {
             position.addPosition();

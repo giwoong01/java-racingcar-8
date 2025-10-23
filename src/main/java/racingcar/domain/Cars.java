@@ -21,7 +21,7 @@ public class Cars {
         validateDuplicateNames(names);
 
         this.cars = names.stream()
-                .map(Car::from)
+                .map(Car::new)
                 .toList();
     }
 
