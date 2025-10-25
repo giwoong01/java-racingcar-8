@@ -94,3 +94,221 @@
     - [x] 시도 횟수가 정상적으로 생성
     - [x] 시도 횟수가 0 또는 음의 정수인 경우 예외 발생
     - [x] 시도 횟수가 문자로 입력되는 경우 예외 발생
+
+## 프로젝트 구조
+
+```
+src
+├── main
+│   └── java/racingcar
+│       ├── Application.java
+│       ├── controller
+|       |   └── RacingcarController.java  
+│       ├── domain
+|       |   ├── power
+|       |   |   ├── PowerGenerator.java
+|       |   |   ├── RandomPowerGenerator.java
+|       |   |   └── FixedPowerGenerator.java
+|       |   ├── Car.java  
+|       |   ├── Cars.java  
+|       |   ├── Name.java  
+|       |   ├── Position.java  
+|       |   └── TryCount.java  
+│       └── view
+|           ├── InputView.java  
+|           └── OutputView.java  
+└── test
+    └── java/racingcar
+        ├── ApplicationTest.java
+        └── domain
+            ├── CarTest.java
+            ├── CarsTest.java
+            ├── NameTest.java
+            ├── PostionTest.java
+            └── TryCountTest.java 
+```
+
+---
+
+## 고민한 점
+
+### 1. View에 대한 클래스를 유틸리티 클래스로 할까? 인스턴스 클래스로 할까?
+
+InputView와 Outputview를 유틸리티 클래스로 할지, 인스턴스 클래스로 할지 고민이 많았습니다.
+
+1주차 과제에서는 인스턴스 클래스로 설계했었습니다. 하지만 곰곰히 생각해 본 결과 인스턴스 클래스로 만들 이유가 없었습니다.
+
+View는 사용자의 입력과 출력을 담당하지만, 별도의 상태(State)를 가지지 않으며 프로그램의 핵심 로직에도 관여하지 않습니다.
+
+그럼에도 불구하고 인스턴스를 만들어야 하는 이유가 없었고, 오히려 객체 생성을 반복하는 것은 불필요한 비용이 있었습니다.
+
+이번 과제에서는 View를 유틸리티 클래스(static 메소드만 존재)로 변경했습니다.
+
+유틸리티 클래스로 바꿈으로써 장점이 있습니다.
+
+- 불필요한 객체 생성을 방지하여 코드의 의도를 명확히 한다.
+- 상태 관리 부담을 줄이고 순수한 입출력 역할에 집중한다.
+- 어디서든 간단히 접근 가능해서 유지보수가 편리하다.
+
+결과적으로 View는 데이터의 흐름에 개입하지 않고, “입출력만 담당하는 역할”로 명확히 분리하였습니다.
+
+### 2. Fail-Fast 원칙을 고려한 검증 순서 개선
+
+처음에는 Car 객체 생성 시 이름 검증을 Name 도메인 내부에서 처리했습니다.
+
+```java
+public class Car {
+
+    private Name name;
+    private int position;
+
+    public Car(String name) {
+        this.name = new Name(name);
+        this.position = 0;
+    }
+
+}
+```
+
+Name은 자동차의 이름이 비어있거나 공백인지, 길이가 5가 초과된 경우를 검증합니다.
+
+그리고 일급컬렉션Cars에서는 자동차 이름의 중복을 검사합니다.
+
+```java
+public class Cars {
+
+    private final List<Car> cars;
+
+    public Cars(String carNames) {
+        List<String> names = parseCarNames(carNames);
+        validateDuplicateNames(names);
+
+        this.cars = names.stream()
+                .map(Car::new)
+                .toList();
+    }
+
+    private List<String> parseCarNames(String carNames) {
+        return Arrays.stream(carNames.split(DELIMITER))
+                .map(String::trim)
+                .toList();
+    }
+
+    private void validateDuplicateNames(List<String> names) {
+        if (names.size() != Set.copyOf(names).size()) {
+            throw new IllformedLocaleException(ERROR_MESSAGE_DUPLICATE_NAME);
+        }
+    }
+
+}
+```
+
+문제는 항상 중복 검증을 먼저 수행한다는 점이었습니다
+
+현재 코드의 동작 흐름은
+
+1. Cars 생성자에 “aa,,bb” 문자열이 들어온다.
+2. parseCarNames가 실행되어 [”aa”, ““, “bb”] 리스트가 생성된다.
+3. validateDuplicateNames가 실행된다. 해당 리스트는 중복이 없기때문에 넘어간다.
+4. stream().map(Car::new)가 실행되면서 new Car(””)가 호출된다.
+5. new Name(””)이 호출되면서, Name의 생성자에서 “이름은 공백일 수 없다”는 에러가 발생한다.
+
+이 동작이 결국에는 옳바르게 에러가 발생하긴 합니다.
+
+하지만 잘못된 오류 메시지를 줄 수 있는 문제가 있습니다.
+
+만약 사용자가 “,,” 와 같이 입력하면?
+
+1. parseCarNames는 [””,””] 리스트를 만든다.
+2. validateDuplicateNames라는 이 리스트에 중복(””)이 있다고 판단하여 “자동차 이름은 중복될 수 없습니다.”라는 예외 발생
+
+사용자는 “이름이 비어있다”는 근본적인 문제를 해결해야 하는데, “이름이 중복되었다”는 엉뚱한 피드백을 받게됩니다.
+
+사실 위와 같이 구현해도 문제는 없지만 개별 이름의 유효성(공백, 길이)을 먼저 검사하고, 그 다음에 목록의 중복을 검사하는 것이 더 좋은 설계입니다.
+
+그 이유는 소프트웨어 설계에는 `Fail-Fast`라는 중요한 설계가 있습니다.
+
+“가장 기본적인 규칙부터 먼저 깨뜨렸다면, 더 복잡한 규칙을 검사할 필요 없이 즉시 실패시키는 것이 좋다” 라는 의미입니다.
+
+더 나은 설계는 개별 검증 후 에 집합을 검증하는 방법입니다.
+
+1. 입력받은 문자열을 개별 이름으로 분리한다.
+2. 분리된 각 이름 문자열이 Name 객체로 생성될 수 있는 유효한 형식인지 먼저 검증한다. (길이, 공백)
+3. 유효한 형식들만 모아서 그 목록에서 중복이 있는지 검사한다.
+4. 모든 검증을 통과하면 Car 객체들을 최종적으로 생성한다.
+
+이렇게하면 Fail-Fast 라는 설계에 적합해집니다.
+
+(중복검사를 할때 Set을 사용하여 List와 비교를 하는데 Name이 일반적인 class면 직접 equals(), hashCode()를 직접 구현해주어야합니다. 하지만 record로 사용하기 때문에 괜찮습니다.
+
+record는 컴파일 시에 자동으로 equals(), hashCode(), toString() 메소드를 생성해주기 때문입니다.
+
+결론적으로 Name이 record로 생성되었기 때문에, Name 객체는 name 컴포넌트의 값을 기반으로 하는 equals()와 hashCode() 메소드를 자동으로 가지게 됩니다.
+
+그래서, List<Name>을 Set.copyOf(names)로 변환할 때, Set은 Name 객체들의 name 컴포넌트 값을 사용하여 중복 여부를 정확하게 판단할 수 있습니다. 만약 두 Name 객체의 name 컴포넌트 값이
+같다면, Set은 이들을 동일한 객체로 인식하여 하나만 저장하게 됩니다.
+
+이게 바로 record를 사용했을 때 별도의 equals()와 hashCode() 구현 없이도 Set을 이용한 중복 검사가 문제없이 작동하는 이유입니다.)
+
+### 3. PowerGenerator를 인터페이스 분리의 이점
+
+자동차의 전진 조건은 랜덤한 숫자에 따라 결정됩니다.
+
+하지만 이 랜덤 값 때문에 테스트 코드에서 결과를 예측할 수 없습니다.
+
+실행할 때마다 값이 달라져 테스트가 실패하거나 성공하는 결과가 일관되지 않았기 때문입니다.
+
+이 문제를 해결하기 위해 PowerGenerator 인터페이스를 분리했습니다.
+
+그리고 이를 구현한 두 가지 클래스를 만들었습니다.
+
+- RandomPowerGenerator: 실제 게임 로직에서 사용하는 랜덤 값 생성기
+- FixedPowerGenerator: 테스트 시 고정된 값을 반환하는 구현체
+
+이와 같이 분리하였습니다.
+
+애플리케이션 로직에서는 랜덤성을 유지하면서도 테스트에서는 예측 가능한 고정된 결과를 검증할 수 있었습니다.
+
+즉, 테스트 가능성과 유연성을 확보한 설계입니다.
+
+### 4. 상수 하나하나에 의미 부여하기
+
+이번 과제에서는 상수를 단순히 매직 넘버를 제거하기 위한 도구로 사용하는데 그치지 않고,
+
+도메인의 규칙을 표현하는 언어로 활용하고자 했습니다.
+
+예를 들어, 자동차 이름의 최대 길이 제한이나 전진 조건의 최소값 같은 규칙을
+
+MAX_NAME_LENGTH, FORWARD_THRESHOLD처럼 구체적인 이름으로 정의했습니다.
+
+이처럼 상수 이름에 명확한 의미를 부여하니 코드만 읽어도 이 프로그램이 어떤 도메인 규칙을 따르고 있는지 확인할 수 있었습니다.
+
+“이름을 통해 의도를 드러내라”라는 1주차 공통 피드백의 연장선이었습니다.
+
+### 5. 객체에게 묻지 말고 시켜라(getter 지양)
+
+이번 과제에서는 단순히 getter를 줄이는 것을 넘어서
+
+객체가 스스로 일하도록 만드는 설계를 적용했습니다.
+
+getter를 남용하면 객체는 단순히 데이터를 보관하는 그릇이 되고, 비즈니스 로직이 외부로 흩어져 캡슐화가 깨집니다.
+
+이를 방지하기 위해, 예를 들어 우승자를 판별할 때 Cars가 Car의 position을 꺼내 비교하던 로직을 Car 객체 스스로 자신의 위치를 비교하도록 위임했습니다.
+
+이처럼 객체에게 시키는 방식으로 리팩토링하니 데이터 은닉이 강해지고, 각 클래스의 책임이 명확해졌습니다.
+
+### 6. 애플리케이션 생명주기와 자원 관리
+
+camp.nextstep.edu.missionutils.Console 라이브러리는 사용이 끝나면 반드시 Console.close()를 호출해야 합니다.
+
+이 메소드를 어디서 호출할지가 고민이었습니다.
+
+- InputView에서 닫는 경우
+    - 한 번 입력 후 스트림이 닫혀 다음 입력시 IllegalStateException이 발생합니다.
+    - View는 단순히 I/O 책임만 가지므로 자원 관리 책임이 적절하지 않습니다.
+- Controller에서 닫는 경우
+    - 기능적으로는 가능하지만, Controller가 콘솔 라이브러리에 직접 의존하기 때문에 결합도가 높아집니다.
+
+결국 프로그램의 전체 생명주기를 관리하는 Application.main()에서 try-finally 구문으로 Console.close()를 호출하는 방식으로 결정했습니다.
+
+이 방식은 책임 분리가 명확하며, 애플리케이션의 자원 해제를 가장 자연스럽게 처리할 수 있습니다.
