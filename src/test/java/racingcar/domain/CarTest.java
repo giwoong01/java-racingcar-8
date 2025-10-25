@@ -18,10 +18,10 @@ class CarTest {
         Car car = new Car(new Name("woong"));
 
         // when
-        Position position = car.getPosition();
+        int position = car.getPositionValue();
 
         // then
-        assertThat(position.getValue()).isZero();
+        assertThat(position).isZero();
     }
 
     @DisplayName("전진 조건(4 이상)을 만족하면 위치가 1 증가합니다.")
@@ -36,7 +36,7 @@ class CarTest {
         car.move(powerGenerator.generate());
 
         // then
-        assertThat(car.getPosition().getValue()).isEqualTo(1);
+        assertThat(car.getPositionValue()).isEqualTo(1);
     }
 
     @DisplayName("전진 조건(4 미만)을 만족하지 못하면 위치는 변하지 않습니다.")
@@ -51,7 +51,7 @@ class CarTest {
         car.move(powerGenerator.generate());
 
         // then
-        assertThat(car.getPosition().getValue()).isEqualTo(0);
+        assertThat(car.getPositionValue()).isEqualTo(0);
     }
 
     @DisplayName("자동차의 위치가 초기 상태일 때 이름만 출력합니다.")
@@ -77,6 +77,36 @@ class CarTest {
 
         // then
         assertThat(car.toString()).isEqualTo("woong : -");
+    }
+
+    @DisplayName("자동차가 주어진 위치에 있을 때 true를 반환합니다.")
+    @ParameterizedTest
+    @ValueSource(ints = {4, 5, 6, 7, 8, 9})
+    void 자동차_주어진_위치_TRUE(int value) {
+        // given
+        Car car = new Car(new Name("woong"));
+        PowerGenerator powerGenerator = new FixedPowerGenerator(value);
+
+        // when
+        car.move(powerGenerator.generate());
+
+        // then
+        assertThat(car.isAt(1)).isTrue();
+    }
+
+    @DisplayName("자동차가 주어진 위치에 없을 때 false를 반환합니다.")
+    @ParameterizedTest
+    @ValueSource(ints = {4, 5, 6, 7, 8, 9})
+    void 자동차_주어진_위치_FALSE(int value) {
+        // given
+        Car car = new Car(new Name("woong"));
+        PowerGenerator powerGenerator = new FixedPowerGenerator(value);
+
+        // when
+        car.move(powerGenerator.generate());
+
+        // then
+        assertThat(car.isAt(3)).isFalse();
     }
 
 }

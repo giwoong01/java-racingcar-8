@@ -12,7 +12,16 @@ public class Position {
         this.value++;
     }
 
+    public boolean isSameAs(int otherPosition) {
+        return this.value == otherPosition;
+    }
+
+    public String toMarkString(String mark) {
+        return mark.repeat(value);
+    }
+
     public int getValue() {
         return value;
     }
+
 }

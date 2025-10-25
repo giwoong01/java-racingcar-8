@@ -25,17 +25,21 @@ public class Car {
         return power >= MOVE_THRESHOLD;
     }
 
-    public Name getName() {
-        return name;
+    public boolean isAt(int position) {
+        return this.position.isSameAs(position);
     }
 
-    public Position getPosition() {
-        return position;
+    public String getNameValue() {
+        return name.name();
+    }
+
+    public int getPositionValue() {
+        return position.getValue();
     }
 
     @Override
     public String toString() {
-        return name.name() + NAME_POSITION_SEPARATOR + POSITION_MARK.repeat(Math.max(INITIAL_POSITION, position.getValue()));
+        return name.name() + NAME_POSITION_SEPARATOR + position.toMarkString(POSITION_MARK);
     }
 
 }

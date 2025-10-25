@@ -48,14 +48,14 @@ public class Cars {
         int maxPosition = findMaxPosition();
 
         return cars.stream()
-                .filter(car -> car.getPosition().getValue() == maxPosition)
-                .map(car -> car.getName().name())
+                .filter(car -> car.isAt(maxPosition))
+                .map(Car::getNameValue)
                 .collect(Collectors.joining(WINNER_NAME_DELIMITER));
     }
 
     private int findMaxPosition() {
         return cars.stream()
-                .mapToInt(car -> car.getPosition().getValue())
+                .mapToInt(Car::getPositionValue)
                 .max()
                 .orElse(DEFAULT_POSITION);
     }

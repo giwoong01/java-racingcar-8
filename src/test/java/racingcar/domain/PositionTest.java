@@ -28,10 +28,48 @@ class PositionTest {
         position.addPosition();
 
         // when
-        int value = position.getValue();
 
         // then
-        assertThat(value).isEqualTo(1);
+        assertThat(position.isSameAs(1)).isTrue();
+    }
+
+    @DisplayName("주어진 정수와 현재 위치 값이 같으면 true를 반환합니다.")
+    @Test
+    void 주어진_정수_현재_위치_같음_TRUE() {
+        // given
+        Position position = new Position();
+
+        // when
+
+        // then
+        assertThat(position.isSameAs(0)).isTrue();
+    }
+
+    @DisplayName("주어진 정수와 현재 위치 값이 다르면 false를 반환합니다.")
+    @Test
+    void 주어진_정수_현재_위치_다름_FALSE() {
+        // given
+        Position position = new Position();
+
+        // when
+
+        // then
+        assertThat(position.isSameAs(1)).isFalse();
+    }
+
+    @DisplayName("현재 위치만큼 주어진 마크를 반복하여 문자열로 반환합니다.")
+    @Test
+    void 현재_위치_마크_반복_문자열_반환() {
+        // given
+        Position position = new Position();
+        position.addPosition();
+        position.addPosition();
+
+        // when
+        String result = position.toMarkString("-");
+
+        // then
+        assertThat(result).isEqualTo("--");
     }
 
 }
